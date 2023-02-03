@@ -1,0 +1,106 @@
+--- 
+title: "pMineR:QoD inspector class"
+author: "PM liquid lab"
+date: "`r Sys.Date()`"
+site: bookdown::bookdown_site
+documentclass: book
+bibliography: [book.bib, packages.bib]
+# url: your book url like https://bookdown.org/yihui/bookdown
+# cover-image: path to the social sharing image like images/cover.jpg
+description: |
+  This is a minimal example of using the bookdown package to write a book.
+  The HTML output format for this example is bookdown::gitbook,
+  set in the _output.yml file.
+link-citations: yes
+github-repo: rstudio/bookdown-demo
+---
+
+# Class Introduction
+
+The Qod class provides methods for performing preliminary analyses on the data.
+
+```{r,echo=TRUE,eval=TRUE,results='hide', warning=FALSE,message=FALSE}
+library(pMineR)
+
+objDL<-dataLoader()
+objDL$load.csv(nomeFile = "EventLog1.csv",IDName = "ID",EVENTName = "Event",dateColumnName = "Date",format.column.date = "%Y-%m-%d")
+obj.out<-objDL$getData()
+
+objQOD<-QOD()
+objQOD$loadDataset(dataList = obj.out)
+
+```
+# Co-occurrence Analysis: eventHeatmap()
+
+The **eventHeatmap()** function allows to display a heatmap showing the co-occurrence of events: 
+
+```{r}
+objQOD$eventHeatmap(threshold.low = 0,threshold.hi = 1)
+```
+
+Each cell _ci,j_ of the matrix, indicates the number of times the event in _row-i_ and _column-j_ appear in the same trace out of the total number of times the event in row-i occurs. 
+
+
+
+# Path matching: query() function
+
+The **query()** functions allows to extract a certain sub-portion of the event Log, corresponding to cases whose trace meets specific requirements specified in the function input. These requirements refer to certain features that the trace must reflect:
+
+ - _from_ : The starting event;
+ - _to_ : The ending event;
+ - _time.range and UM_: The time between the two events and its unit of time measurement (whether in hours, days,
+weeks, months, or years);
+ - _arr.passingThrough_ : events should have occurred between the 'from' event and the 'to' event
+ - _arr.NOTpassingThrough_ : events should not have occurred between the 'from' event and the 'to' event
+ - _step.range_: the min and max number of events should have occurred between the 'from' event and the 'to' event
+
+
+the query() function allows for two different types of output, according to the value of the _returnCompleteMatrix_. If it is setted to TRUE, the function returns a matrix containing the following informations:
+
+ - ID (first column) : the casse-ID whose trace matches the specified requirements;
+ - The "from" and "to" columns explicit the cardinality that the start and end of the pattern hold within the trace.
+ - The "step" column indicates the number of events that lie between 'from' and 'to' event.
+ - The "time" column indicates the duration between 'from' and 'to' event
+
+
+```{r,echo=TRUE,eval=TRUE}
+
+objQOD$query(from = "Biopsy",
+             to = "death",
+             time.range = c(0,20),
+             UM = "days",
+             returnCompleteMatrix = T)
+
+
+```
+
+If you want the function to return only an array with case IDs, the  _returnCompleteMatrix_ input must be setted to FALSE.
+
+
+```{r,echo=TRUE,eval=TRUE}
+
+array.ID<-objQOD$query(from = "Biopsy",
+             to = "death",
+             time.range = c(0,20),
+             UM = "days",
+             returnCompleteMatrix = F)
+print(array.ID)
+
+```
+
+
+# Timeline visualization: plotTimeline() function 
+
+It is possible to visualize the temporal evolution of their traces through the visualization of a timeline. 
+
+
+```{r}
+arr.ID<-objQOD$plotTimeline(objDL.obj = obj.out, max.time = 20,UM = "weeks")
+
+```
+It is possible to filter the number of trace to plot by passing the function an array containing the IDs of the cases you want to investigate. 
+
+```{r}
+objQOD$plotTimeline(objDL.obj = obj.out, max.time = 20,UM = "weeks",arr.ID = array.ID)
+```
+
